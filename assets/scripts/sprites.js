@@ -8,11 +8,12 @@ export function loadGameSprites(scene){
   scene.load.image('movableSlot', 'assets/sprites/movableSlot.png');
   scene.load.image('gridBack', 'assets/sprites/GridBack.png');
   scene.load.image('inventoryBack', 'assets/sprites/inventoryBack.png');
-  scene.load.image('background', 'assets/sprites/Background.png');
+  scene.load.image('background', 'assets/sprites/background.png');
 
   // sheets
   scene.load.spritesheet('fruits', 'assets/sprites/fruits.png', {frameWidth: 36,frameHeight: 36 });
 
  
 }
+
 
