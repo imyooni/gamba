@@ -6,7 +6,7 @@ export default class Game_Scene extends Phaser.Scene {
 
   preload() { 
     sprites.loadGameSprites(this);
-    this.load.audio('menuBgm', 'assets/audio/bgm/MenuBgm.ogg');
+    this.load.audio('menuBgm', '../assets/audio/bgm/MenuBgm.ogg');
    }
 
   create() {
@@ -983,6 +983,7 @@ if (data.key === 'watermelon') {
     }
   }
 }
+
 
 
 
