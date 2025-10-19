@@ -6,7 +6,7 @@ export default class Game_Scene extends Phaser.Scene {
 
   preload() {
     sprites.loadGameSprites(this);
-    this.load.audio('menuBgm', 'assets/audio/bgm/MenuBgm.ogg');
+    this.load.audio('menuBgm', 'assets/audio/BGM/MenuBgm.ogg');
   }
 
   create() {
@@ -1252,6 +1252,7 @@ this.coinsText.setText(`Coins: ${this.coins[0]}/${this.coins[1]}`);
       }
     }
   }
+
 
 
 
