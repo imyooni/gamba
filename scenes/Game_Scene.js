@@ -936,38 +936,75 @@ if (data.key === 'lemon') {
 }
 
 if (data.key === 'watermelon') {
-  const nx = slot.gridX;
-  const ny = slot.gridY + 1;
+    const nx = slot.gridX;
+    const ny = slot.gridY + 1;
 
-  // Gain +1 every turn
-  data.baseValue += 1;
-  if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
+    // Gain +1 every turn
+    data.baseValue += 1;
+    if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
 
-  // Destroy fruit below if present
-  if (ny >= 0 && ny < this.slots.length && nx >= 0 && nx < this.slots[0].length) {
-    const below = this.slots[ny][nx];
-    if (below.used && below.symbol) {
-      const bSym = below.symbol;
-      const bData = bSym.symbolData;
+    // Check the symbol below
+    if (ny >= 0 && ny < this.slots.length && nx >= 0 && nx < this.slots[0].length) {
+        const below = this.slots[ny][nx];
+        if (below.used && below.symbol) {
+            const bSym = below.symbol;
+            const bData = bSym.symbolData;
 
-      if (bData.type === 'fruit' && bData.key != 'watermelon') {
-        below.used = false;
-        below.symbol = null;
-        below.setTexture('emptySlot'); // reset slot texture
+            // If below is a watermelon, destroy both
+            if (bData.key === 'watermelon') {
+                // Destroy current symbol
+                const currentSlot = this.findSlotForSymbol(symbol);
+                if (currentSlot) {
+                    currentSlot.used = false;
+                    currentSlot.symbol = null;
+                    currentSlot.setTexture('emptySlot');
+                }
 
-        this.tweens.add({
-          targets: [bSym, bSym.valueText],
-          alpha: 0,
-          duration: 200,
-          onComplete: () => {
-            if (bSym.valueText) bSym.valueText.destroy();
-            bSym.destroy();
-          }
-        });
-      }
+                this.tweens.add({
+                    targets: [symbol, symbol.valueText],
+                    alpha: 0,
+                    duration: 200,
+                    onComplete: () => {
+                        if (symbol.valueText) symbol.valueText.destroy();
+                        symbol.destroy();
+                    }
+                });
+
+                // Destroy the one below
+                below.used = false;
+                below.symbol = null;
+                below.setTexture('emptySlot');
+
+                this.tweens.add({
+                    targets: [bSym, bSym.valueText],
+                    alpha: 0,
+                    duration: 200,
+                    onComplete: () => {
+                        if (bSym.valueText) bSym.valueText.destroy();
+                        bSym.destroy();
+                    }
+                });
+            } else if (bData.type === 'fruit') {
+                // Otherwise, destroy only the symbol below (normal watermelon behavior)
+                below.used = false;
+                below.symbol = null;
+                below.setTexture('emptySlot');
+
+                this.tweens.add({
+                    targets: [bSym, bSym.valueText],
+                    alpha: 0,
+                    duration: 200,
+                    onComplete: () => {
+                        if (bSym.valueText) bSym.valueText.destroy();
+                        bSym.destroy();
+                    }
+                });
+            }
+        }
     }
-  }
 }
+
+
 
 
 
