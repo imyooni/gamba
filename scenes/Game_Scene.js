@@ -4,34 +4,35 @@ import * as symbols from '../assets/scripts/symbols.js';
 export default class Game_Scene extends Phaser.Scene {
   constructor() { super('GameScene'); }
 
-  preload() { 
+  preload() {
     sprites.loadGameSprites(this);
-    this.load.audio('MenuBgm', 'assets/audio/BGM/MenuBgm.ogg');
-   }
+    this.load.audio('menuBgm', 'assets/audio/bgm/MenuBgm.ogg');
+  }
 
   create() {
-    this.background = this.add.image(this.scale.width / 2, this.scale.height / 2, 'background').setOrigin(0.5);
-    this.menuBgm = null;
+    this.background = this.add.image(this.scale.width / 2, this.scale.height / 2, 'Background').setOrigin(0.5);
+
     this.endTurnActive = true
     // Initialize drag tracking variables first
     this.draggedSymbol = null;
     this.originalSlot = null;
     this.dragOffset = { x: 0, y: 0 };
-    
+
     this.createGrid();
     this.createInventory();
-    this.createStartButton();
     this.createEndTurnButton();
-    
+    this.createEndDayButton();
+    this.createStartButton();
+
     // Enable drag and drop - do this AFTER creating interactive objects
     this.input.on('dragstart', (pointer, gameObject) => {
       this.onDragStart(pointer, gameObject);
     });
-    
+
     this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
       this.onDrag(pointer, gameObject, dragX, dragY);
     });
-    
+
     this.input.on('dragend', (pointer, gameObject) => {
       this.onDragEnd(pointer, gameObject);
     });
@@ -88,26 +89,26 @@ export default class Game_Scene extends Phaser.Scene {
   // Drag event handlers
   onDragStart(pointer, gameObject) {
     const symbol = gameObject;
-    
+
     // ONLY allow dragging for symbols that are placed on grid AND are movable
     if (!symbol.placedOnGrid || symbol.symbolData.movement !== 'movable') {
       this.input.setDraggable(symbol, false);
       return;
     }
-    
+
     this.draggedSymbol = symbol;
     symbol.setAlpha(0.7);
-    
+
     // Calculate offset for smooth dragging
     this.dragOffset.x = symbol.x - pointer.worldX;
     this.dragOffset.y = symbol.y - pointer.worldY;
-    
+
     // Bring symbol to top
     symbol.setDepth(1000);
     if (symbol.valueText) {
       symbol.valueText.setDepth(1001);
     }
-    
+
     // Store original slot info and free it up
     this.originalSlot = this.findSlotForSymbol(symbol);
     if (this.originalSlot) {
@@ -120,10 +121,10 @@ export default class Game_Scene extends Phaser.Scene {
   onDrag(pointer, gameObject, dragX, dragY) {
     const symbol = gameObject;
     if (this.draggedSymbol !== symbol) return;
-    
+
     symbol.x = dragX + this.dragOffset.x;
     symbol.y = dragY + this.dragOffset.y;
-    
+
     // Move value text with symbol - APPLY LEFT MARGIN HERE
     if (symbol.valueText) {
       const currentSlot = this.findSlotForSymbol(symbol) || { width: 36 };
@@ -136,16 +137,16 @@ export default class Game_Scene extends Phaser.Scene {
   onDragEnd(pointer, gameObject) {
     const symbol = gameObject;
     if (this.draggedSymbol !== symbol) return;
-    
+
     symbol.setAlpha(1);
     symbol.setDepth(0);
     if (symbol.valueText) {
       symbol.valueText.setDepth(1);
     }
-    
+
     // Find the closest valid slot
     const targetSlot = this.findClosestEmptySlot(symbol.x, symbol.y);
-    
+
     if (targetSlot && !targetSlot.used) {
       // Place symbol in the new slot
       this.placeSymbolInSlot(symbol, targetSlot);
@@ -162,7 +163,7 @@ export default class Game_Scene extends Phaser.Scene {
         this.returnSymbolToOriginalPosition(symbol);
       }
     }
-    
+
     this.draggedSymbol = null;
     this.originalSlot = null;
   }
@@ -172,7 +173,7 @@ export default class Game_Scene extends Phaser.Scene {
     // Store original position for snap back if needed
     symbol.originalPosition = { x: symbol.x, y: symbol.y };
     symbol.currentSlotIndex = inventorySlotIndex;
-    
+
     // For symbols in inventory (not placed on grid yet)
     if (!symbol.placedOnGrid) {
       // Use click to place on grid for ALL inventory symbols
@@ -180,10 +181,10 @@ export default class Game_Scene extends Phaser.Scene {
       symbol.on('pointerdown', () => {
         this.placeSymbolOnGrid(symbol, symbolData, inventorySlotIndex);
       });
-      
+
       // IMPORTANT: Disable dragging for inventory symbols
       this.input.setDraggable(symbol, false);
-      
+
     } else {
       // For symbols already placed on grid
       if (symbol.symbolData.movement === 'movable') {
@@ -219,7 +220,7 @@ export default class Game_Scene extends Phaser.Scene {
         symbol.disableInteractive();
       },
       onComplete: () => {
-          symbol.placedOnGrid = true;
+        symbol.placedOnGrid = true;
         // After placing on grid, set up appropriate interaction
         if (symbol.symbolData.movement === 'movable') {
           // Enable dragging for movable symbols on grid
@@ -241,8 +242,8 @@ export default class Game_Scene extends Phaser.Scene {
         stroke: '#000000',
         strokeThickness: 4,
         fill: '#ffffff'
-      }).setOrigin(0, 0); 
-      
+      }).setOrigin(0, 0);
+
       const leftMargin = this.getTextLeftMargin(target);
       symbol.valueText.x = symbol.x - leftMargin;
 
@@ -284,7 +285,7 @@ export default class Game_Scene extends Phaser.Scene {
   findClosestEmptySlot(x, y) {
     let closestSlot = null;
     let minDistance = Number.MAX_VALUE;
-    
+
     for (let row of this.slots) {
       for (let slot of row) {
         if (!slot.used) {
@@ -296,7 +297,7 @@ export default class Game_Scene extends Phaser.Scene {
         }
       }
     }
-    
+
     // Only return if within a reasonable distance (slot size + some padding)
     return minDistance < 50 ? closestSlot : null;
   }
@@ -326,7 +327,7 @@ export default class Game_Scene extends Phaser.Scene {
   // Helper method to place symbol in a specific slot
   placeSymbolInSlot(symbol, slot) {
     const leftMargin = this.getTextLeftMargin(slot);
-    
+
     // Smooth movement to slot
     this.tweens.add({
       targets: [symbol],
@@ -350,7 +351,7 @@ export default class Game_Scene extends Phaser.Scene {
     slot.used = true;
     slot.symbol = symbol;
     symbol.placedOnGrid = true;
-    
+
     if (symbol.symbolData.movement === 'movable') {
       slot.setTexture('movableSlot');
       // Keep symbol draggable since it's movable and on grid
@@ -368,7 +369,7 @@ export default class Game_Scene extends Phaser.Scene {
   returnSymbolToOriginalPosition(symbol) {
     const originalSlot = this.findSlotForSymbol(symbol) || { width: 36 };
     const leftMargin = this.getTextLeftMargin(originalSlot);
-    
+
     this.tweens.add({
       targets: [symbol],
       x: symbol.originalPosition.x,
@@ -398,6 +399,7 @@ export default class Game_Scene extends Phaser.Scene {
     symbol.placedOnGrid = false;
     symbol.currentSlotIndex = index;
     symbol.symbolData = symbolData;
+    symbol.isProtected = []
 
     this.tweens.add({ targets: symbol, scale: 1, duration: 300, ease: 'Back.Out' });
 
@@ -412,205 +414,153 @@ export default class Game_Scene extends Phaser.Scene {
     this.setupSymbolInteraction(symbol, symbolData, index);
   }
 
-createStartButton() {
-  const { width } = this.scale;
+  createStartButton() {
+    const { width } = this.scale;
 
-  const startBtn = this.add.text(width / 2, 40, 'START', {
-    fontSize: '28px',
-    fontFamily: 'Arial',
-    color: '#ffffff',
-    backgroundColor: '#ff9900',       // base color
-    padding: { x: 20, y: 10 },
-    stroke: '#000000',
-    strokeThickness: 3,
-    shadow: {
-      offsetX: 3,
-      offsetY: 3,
-      color: '#000000',
-      blur: 4,
-      stroke: true,
-      fill: true
-    }
-  }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-
-  // Hover effect
-  startBtn.on('pointerover', () => {
-    startBtn.setStyle({ backgroundColor: '#ffaa33', color: '#fff8e7' });
-    startBtn.setScale(1.05);
-  });
-  startBtn.on('pointerout', () => {
-    startBtn.setStyle({ backgroundColor: '#ff9900', color: '#ffffff' });
-    startBtn.setScale(1);
-  });
-
-  startBtn.on('pointerdown', () => {
-    startBtn.setVisible(false);
-    startBtn.disableInteractive();
-
-    // Play BGM
-    if (!this.menuBgm) {
-      this.menuBgm = this.sound.add('MenuBgm', { loop: true, volume: 0.5 });
-    }
-    this.menuBgm.play();
-
-    // Fill inventory
-    const emptySlots = this.inventorySlots.filter(s => !s.symbol || s.symbol.placedOnGrid);
-    for (let i = 0; i < Math.min(4, emptySlots.length); i++) {
-      const index = this.inventorySlots.indexOf(emptySlots[i]);
-      this.addInventorySymbol(emptySlots[i], index);
-    }
-  });
-}
-
- 
-  // Add this new method to your class
-// Updated method to include movable slots as free slots
-moveRandomSymbols() {
-  const randomSymbols = [];
-
-  // Collect all symbols with random movement
-  for (let row of this.slots) {
-    for (let slot of row) {
-      if (slot.used && slot.symbol && slot.symbol.symbolData.movement === 'random' && !slot.destroyed) {
-        randomSymbols.push({
-          symbol: slot.symbol,
-          originalSlot: slot
-        });
+    const startBtn = this.add.text(width / 2, 40, 'START', {
+      fontSize: '28px',
+      fontFamily: 'Arial',
+      color: '#ffffff',
+      backgroundColor: '#ff9900',       // base color
+      padding: { x: 20, y: 10 },
+      stroke: '#000000',
+      strokeThickness: 3,
+      shadow: {
+        offsetX: 3,
+        offsetY: 3,
+        color: '#000000',
+        blur: 4,
+        stroke: true,
+        fill: true
       }
-    }
-  }
+    }).setOrigin(0.5).setInteractive();
+this.startButton = startBtn
+ this.score = 0;
+this.scoreText = this.add.text(20, 110, '0', {
+    fontFamily: 'DefaultFont',
+        fontSize: '24px',
+        stroke: '#000000',
+        strokeThickness: 4,
+        fill: '#ffd000ff'
+})
+this.scoreText.setVisible(false)
 
-  if (randomSymbols.length === 0) return;
+this.coins = [5,5];
+this.coinsText = this.add.text(20, 80, `Coins: ${this.coins[0]}/${this.coins[1]}`, {
+    fontFamily: 'DefaultFont',
+        fontSize: '24px',
+        stroke: '#000000',
+        strokeThickness: 4,
+        fill: '#ffd000ff'
+})
+this.coinsText.setVisible(false)
 
-  // Collect all valid target slots (empty + random symbols)
-  const targetSlots = [];
-  for (let row of this.slots) {
-    for (let slot of row) {
-      if (!slot.used || (slot.used && slot.symbol && slot.symbol.symbolData.movement === 'random' && !slot.destroyed)) {
-        targetSlots.push(slot);
-      }
-    }
-  }
 
-  // Shuffle possible targets
-  const availableTargets = Phaser.Utils.Array.Shuffle([...targetSlots]);
-  const moves = [];
-
-  // Assign unique target to each symbol
-  randomSymbols.forEach(({ symbol, originalSlot }) => {
-    // Filter out original slot
-    const validTargets = availableTargets.filter(s => s !== originalSlot);
-    if (validTargets.length === 0) return;
-
-    const targetSlot = validTargets[0]; // first valid one
-    moves.push({ symbol, fromSlot: originalSlot, toSlot: targetSlot });
-
-    // Mark slots
-    originalSlot.used = false;
-    originalSlot.symbol = null;
-    originalSlot.setTexture('emptySlot');
-
-    // Remove target from available list
-    availableTargets.splice(availableTargets.indexOf(targetSlot), 1);
-  });
-
-  // Assign symbols to new slots
-  moves.forEach(({ symbol, toSlot }) => {
-    toSlot.used = true;
-    toSlot.symbol = symbol;
-  });
-
-  // Animate movements
-  moves.forEach(({ symbol, toSlot }) => {
-    if (symbol.destroyed) return;
-    this.tweens.add({
-      targets: [symbol],
-      x: toSlot.x,
-      y: toSlot.y,
-      duration: 400,
-      ease: 'Back.easeInOut',
-      onComplete: () => {
-        toSlot.setTexture('usedSlot');
-      }
+ this.goal = 50;
+this.goalText = this.add.text(210, 110, 'Goal: 50', {
+    fontFamily: 'DefaultFont',
+        fontSize: '24px',
+        stroke: '#000000',
+        strokeThickness: 4,
+        fill: '#00ff9dff'
+})
+this.goalText.setVisible(false)
+    // Hover effect
+    startBtn.on('pointerover', () => {
+      startBtn.setStyle({ backgroundColor: '#ffaa33', color: '#fff8e7' });
+      startBtn.setScale(1.05);
+    });
+    startBtn.on('pointerout', () => {
+      startBtn.setStyle({ backgroundColor: '#ff9900', color: '#ffffff' });
+      startBtn.setScale(1);
     });
 
-    if (symbol.valueText) {
-      const leftMargin = this.getTextLeftMargin(toSlot);
-      this.tweens.add({
-        targets: [symbol.valueText],
-        x: toSlot.x - leftMargin,
-        y: toSlot.y,
-        duration: 400,
-        ease: 'Back.easeInOut'
-      });
-    }
-  });
-}
+    startBtn.on('pointerdown', () => {
+      this.startButton.setVisible(false);
+     
+
+      // Play BGM
+      if (!this.menuBgm) {
+        this.menuBgm = this.sound.add('menuBgm', { loop: true, volume: 0.5 });
+      }
+      this.menuBgm.play();
+
+      this.endDayButton.setVisible(true)
+      this.endButton.setVisible(true)
+      this.coinsText.setVisible(true)
+      this.scoreText.setVisible(true)
+      this.goalText.setVisible(true)
+
+      // Fill inventory
+      const emptySlots = this.inventorySlots.filter(s => !s.symbol || s.symbol.placedOnGrid);
+      for (let i = 0; i < Math.min(4, emptySlots.length); i++) {
+        const index = this.inventorySlots.indexOf(emptySlots[i]);
+        this.addInventorySymbol(emptySlots[i], index);
+      }
+    });
+  }
 
 
-// Update the createEndTurnButton method to use this function
-createEndTurnButton() {
-  const { width } = this.scale;
-
-  const endButton = this.add.text(width - 80, 20, 'END TURN', {
-    fontSize: '20px',
-    color: '#ffffff',
-    backgroundColor: '#000000',
-    padding: { x: 10, y: 5 }
-  }).setOrigin(0.5).setInteractive();
-
-  endButton.on('pointerdown', () => {
-    if (!this.inventorySlots || !this.endTurnActive) return;
-
-    this.endTurnActive = false;
-    this.applySymbolEffects();
-
-    let tweensToWait = 0;
-
-    // ---------------- MOVE RANDOM SYMBOLS ----------------
+  // Add this new method to your class
+  // Updated method to include movable slots as free slots
+  moveRandomSymbols() {
     const randomSymbols = [];
+
+    // Collect all symbols with random movement
     for (let row of this.slots) {
       for (let slot of row) {
-        if (slot.used && slot.symbol && slot.symbol.symbolData.movement === 'random') {
-          randomSymbols.push({ symbol: slot.symbol, originalSlot: slot });
+        if (slot.used && slot.symbol && slot.symbol.symbolData.movement === 'random' && !slot.destroyed) {
+          randomSymbols.push({
+            symbol: slot.symbol,
+            originalSlot: slot
+          });
         }
       }
     }
 
+    if (randomSymbols.length === 0) return;
+
+    // Collect all valid target slots (empty + random symbols)
     const targetSlots = [];
     for (let row of this.slots) {
       for (let slot of row) {
-        if (!slot.used || (slot.used && slot.symbol && slot.symbol.symbolData.movement === 'random')) {
+        if (!slot.used || (slot.used && slot.symbol && slot.symbol.symbolData.movement === 'random' && !slot.destroyed)) {
           targetSlots.push(slot);
         }
       }
     }
 
+    // Shuffle possible targets
     const availableTargets = Phaser.Utils.Array.Shuffle([...targetSlots]);
     const moves = [];
 
+    // Assign unique target to each symbol
     randomSymbols.forEach(({ symbol, originalSlot }) => {
+      // Filter out original slot
       const validTargets = availableTargets.filter(s => s !== originalSlot);
       if (validTargets.length === 0) return;
 
-      const targetSlot = validTargets[0];
+      const targetSlot = validTargets[0]; // first valid one
       moves.push({ symbol, fromSlot: originalSlot, toSlot: targetSlot });
 
+      // Mark slots
       originalSlot.used = false;
       originalSlot.symbol = null;
       originalSlot.setTexture('emptySlot');
 
+      // Remove target from available list
       availableTargets.splice(availableTargets.indexOf(targetSlot), 1);
     });
 
+    // Assign symbols to new slots
     moves.forEach(({ symbol, toSlot }) => {
       toSlot.used = true;
       toSlot.symbol = symbol;
     });
 
-    // Animate random symbol movement
+    // Animate movements
     moves.forEach(({ symbol, toSlot }) => {
-      tweensToWait++;
+      if (symbol.destroyed) return;
       this.tweens.add({
         targets: [symbol],
         x: toSlot.x,
@@ -619,148 +569,289 @@ createEndTurnButton() {
         ease: 'Back.easeInOut',
         onComplete: () => {
           toSlot.setTexture('usedSlot');
-          tweensToWait--;
-          checkAllDone();
         }
       });
 
       if (symbol.valueText) {
         const leftMargin = this.getTextLeftMargin(toSlot);
-        tweensToWait++;
         this.tweens.add({
           targets: [symbol.valueText],
           x: toSlot.x - leftMargin,
           y: toSlot.y,
           duration: 400,
-          ease: 'Back.easeInOut',
-          onComplete: () => {
-            tweensToWait--;
-            checkAllDone();
-          }
+          ease: 'Back.easeInOut'
         });
       }
     });
+  }
 
-    // ---------------- INVENTORY PROCESSING ----------------
-    const slots = this.inventorySlots;
+gameOver() {
+    // Stop BGM if playing
+    if (this.menuBgm && this.menuBgm.isPlaying) {
+        this.menuBgm.stop();
+    }
 
-    const continueAfterFadeout = () => {
-      for (let i = slots.length - 1; i > 0; i--) {
-        const prevSymbol = slots[i - 1].symbol;
-        if (prevSymbol && !prevSymbol.placedOnGrid) {
-          prevSymbol.x = slots[i].slot.x;
-          prevSymbol.y = slots[i].slot.y;
-          slots[i].symbol = prevSymbol;
-          if (prevSymbol.symbolData.movement === 'movable') {
-            slots[i].slot.setTexture('movableSlot');
-          } else {
-            slots[i].slot.setTexture('usedSlot');
+    // Destroy all symbols on the main grid
+    for (let row of this.slots) {
+        for (let slot of row) {
+            if (slot.symbol) {
+                if (slot.symbol.valueText) slot.symbol.valueText.destroy();
+                slot.symbol.destroy();
+                slot.symbol = null;
+            }
+            slot.used = false;
+            slot.setTexture('emptySlot');
+        }
+    }
+
+    // Destroy all symbols in the inventory
+    for (let invSlot of this.inventorySlots) {
+        if (invSlot.symbol) {
+            if (invSlot.symbol.valueText) invSlot.symbol.valueText.destroy();
+            invSlot.symbol.destroy();
+            invSlot.symbol = null;
+        }
+        invSlot.slot.setTexture('emptySlot');
+    }
+
+    this.score = 0
+    this.goal = 50;
+    this.coins = [5,5]
+    this.endDayButton.setVisible(false)
+    this.endButton.setVisible(false)
+    this.coinsText.setVisible(false)
+    this.scoreText.setVisible(false)
+    this.goalText.setVisible(false)
+    this.startButton.setVisible(true)
+}
+
+
+  createEndDayButton() {
+    const { width } = this.scale;
+     const endDayButton = this.add.text(width - 80, 60, 'END DAY', {
+    fontSize: '20px',
+    color: '#ffffff',
+    backgroundColor: '#000000',
+    padding: { x: 10, y: 5 }
+  }).setOrigin(0.5).setVisible(false).setInteractive();
+   this.endDayButton = endDayButton
+
+   endDayButton.on('pointerdown', () => {
+     if (this.score < this.goal) {
+      this.gameOver()
+     } else {
+      this.coins[0] = this.coins[1]
+this.goal = Math.ceil(this.goal * 2.25);
+this.goalText.setText(`Goal: ${this.goal}`);
+this.coinsText.setText(`Coins: ${this.coins[0]}/${this.coins[1]}`)
+
+     }
+    })
+
+  }
+  // Update the createEndTurnButton method to use this function
+  createEndTurnButton() {
+    const { width } = this.scale;
+
+    const endButton = this.add.text(width - 80, 20, 'END TURN', {
+      fontSize: '20px',
+      color: '#ffffff',
+      backgroundColor: '#000000',
+      padding: { x: 10, y: 5 }
+    }).setOrigin(0.5).setVisible(false).setInteractive();
+     this.endButton = endButton
+
+     
+
+    endButton.on('pointerdown', () => {
+      if (this.coins[0] < 1) return
+      if (!this.inventorySlots || !this.endTurnActive) return;
+
+            for (let row of this.slots) {
+    for (let slot of row) {
+        if (slot.used && slot.symbol) {
+            this.score += slot.symbol.symbolData.baseValue;
+        }
+    }
+}
+this.coins[0] -= 1
+this.scoreText.setText(this.score);
+this.coinsText.setText(`Coins: ${this.coins[0]}/${this.coins[1]}`);
+
+      this.endTurnActive = false;
+      this.applySymbolEffects();
+
+      let tweensToWait = 0;
+
+
+      // ---------------- MOVE RANDOM SYMBOLS ----------------
+      const randomSymbols = [];
+      for (let row of this.slots) {
+        for (let slot of row) {
+          if (slot.used && slot.symbol && slot.symbol.symbolData.movement === 'random') {
+            randomSymbols.push({ symbol: slot.symbol, originalSlot: slot });
           }
-
-          slots[i - 1].symbol = null;
-          slots[i - 1].slot.setTexture('emptySlot');
-          prevSymbol.currentSlotIndex = i;
         }
       }
 
-      const firstSlot = slots[0];
-      if (!firstSlot.symbol || firstSlot.symbol.placedOnGrid) {
-        const symbolData = symbols.generateSymbol();
-        const newSymbol = this.add.sprite(firstSlot.slot.x, firstSlot.slot.y, symbolData.sprite[0], symbolData.sprite[1]).setOrigin(0.5);
-        newSymbol.visible = true;
-        newSymbol.setScale(0);
-        newSymbol.placedOnGrid = false;
-        newSymbol.symbolData = symbolData;
-        newSymbol.currentSlotIndex = 0;
+      const targetSlots = [];
+      for (let row of this.slots) {
+        for (let slot of row) {
+          if (!slot.used || (slot.used && slot.symbol && slot.symbol.symbolData.movement === 'random')) {
+            targetSlots.push(slot);
+          }
+        }
+      }
 
+      const availableTargets = Phaser.Utils.Array.Shuffle([...targetSlots]);
+      const moves = [];
+
+      randomSymbols.forEach(({ symbol, originalSlot }) => {
+        const validTargets = availableTargets.filter(s => s !== originalSlot);
+        if (validTargets.length === 0) return;
+
+        const targetSlot = validTargets[0];
+        moves.push({ symbol, fromSlot: originalSlot, toSlot: targetSlot });
+
+        originalSlot.used = false;
+        originalSlot.symbol = null;
+        originalSlot.setTexture('emptySlot');
+
+        availableTargets.splice(availableTargets.indexOf(targetSlot), 1);
+      });
+
+      moves.forEach(({ symbol, toSlot }) => {
+        toSlot.used = true;
+        toSlot.symbol = symbol;
+      });
+
+      // Animate random symbol movement
+      moves.forEach(({ symbol, toSlot }) => {
         tweensToWait++;
         this.tweens.add({
-          targets: newSymbol,
-          scale: 1,
-          duration: 300,
-          ease: 'Back.Out',
+          targets: [symbol],
+          x: toSlot.x,
+          y: toSlot.y,
+          duration: 400,
+          ease: 'Back.easeInOut',
           onComplete: () => {
+            toSlot.setTexture('usedSlot');
             tweensToWait--;
             checkAllDone();
           }
         });
 
-        firstSlot.symbol = newSymbol;
-        if (newSymbol.symbolData.movement === 'movable') {
-          firstSlot.slot.setTexture('movableSlot');
-        } else {
-          firstSlot.slot.setTexture('usedSlot');
-        }
-
-        this.setupSymbolInteraction(newSymbol, symbolData, 0);
-      }
-    };
-
-    const lastSlot = slots[slots.length - 1];
-    if (lastSlot.symbol && !lastSlot.symbol.placedOnGrid) {
-      tweensToWait++;
-      this.tweens.add({
-        targets: [lastSlot.symbol, lastSlot.slot],
-        alpha: 0,
-        scale: 0,
-        duration: 300,
-        ease: 'Power2',
-        onComplete: () => {
-          lastSlot.symbol.destroy();
-          lastSlot.symbol = null;
-          lastSlot.slot.setTexture('emptySlot');
-          lastSlot.slot.setAlpha(1);
-          lastSlot.slot.setScale(1);
-          continueAfterFadeout();
-          tweensToWait--;
-          checkAllDone();
+        if (symbol.valueText) {
+          const leftMargin = this.getTextLeftMargin(toSlot);
+          tweensToWait++;
+          this.tweens.add({
+            targets: [symbol.valueText],
+            x: toSlot.x - leftMargin,
+            y: toSlot.y,
+            duration: 400,
+            ease: 'Back.easeInOut',
+            onComplete: () => {
+              tweensToWait--;
+              checkAllDone();
+            }
+          });
         }
       });
-    } else {
-      continueAfterFadeout();
-    }
 
-    const checkAllDone = () => {
-  if (tweensToWait <= 0) {
-    this.endTurnActive = true;
-  }
-};
+      // ---------------- INVENTORY PROCESSING ----------------
+      const slots = this.inventorySlots;
 
-  });
-}
+      const continueAfterFadeout = () => {
+        for (let i = slots.length - 1; i > 0; i--) {
+          const prevSymbol = slots[i - 1].symbol;
+          if (prevSymbol && !prevSymbol.placedOnGrid) {
+            prevSymbol.x = slots[i].slot.x;
+            prevSymbol.y = slots[i].slot.y;
+            slots[i].symbol = prevSymbol;
+            if (prevSymbol.symbolData.movement === 'movable') {
+              slots[i].slot.setTexture('movableSlot');
+            } else {
+              slots[i].slot.setTexture('usedSlot');
+            }
 
+            slots[i - 1].symbol = null;
+            slots[i - 1].slot.setTexture('emptySlot');
+            prevSymbol.currentSlotIndex = i;
+          }
+        }
 
-// --- SYMBOL EFFECTS ---
-applySymbolEffects() {
-  for (let row of this.slots) {
-    for (let slot of row) {
-      if (!slot.used || !slot.symbol) continue;
+        const firstSlot = slots[0];
+        if (!firstSlot.symbol || firstSlot.symbol.placedOnGrid) {
+          const symbolData = symbols.generateSymbol();
+          const newSymbol = this.add.sprite(firstSlot.slot.x, firstSlot.slot.y, symbolData.sprite[0], symbolData.sprite[1]).setOrigin(0.5);
+          newSymbol.visible = true;
+          newSymbol.setScale(0);
+          newSymbol.placedOnGrid = false;
+          newSymbol.symbolData = symbolData;
+          newSymbol.currentSlotIndex = 0;
 
-      const symbol = slot.symbol;
-      const data = symbol.symbolData;
+          tweensToWait++;
+          this.tweens.add({
+            targets: newSymbol,
+            scale: 1,
+            duration: 300,
+            ease: 'Back.Out',
+            onComplete: () => {
+              tweensToWait--;
+              checkAllDone();
+            }
+          });
 
-      if (data.key === 'cherry') {
-  // Count cherries on the grid except this one
-  let otherCherries = 0;
-  for (let row of this.slots) {
-    for (let s of row) {
-      if (s.used && s.symbol && s.symbol.symbolData.key === 'cherry' && s !== slot) {
-        otherCherries++;
+          firstSlot.symbol = newSymbol;
+          if (newSymbol.symbolData.movement === 'movable') {
+            firstSlot.slot.setTexture('movableSlot');
+          } else {
+            firstSlot.slot.setTexture('usedSlot');
+          }
+
+          this.setupSymbolInteraction(newSymbol, symbolData, 0);
+        }
+      };
+
+      const lastSlot = slots[slots.length - 1];
+      if (lastSlot.symbol && !lastSlot.symbol.placedOnGrid) {
+        tweensToWait++;
+        this.tweens.add({
+          targets: [lastSlot.symbol, lastSlot.slot],
+          alpha: 0,
+          scale: 0,
+          duration: 300,
+          ease: 'Power2',
+          onComplete: () => {
+            lastSlot.symbol.destroy();
+            lastSlot.symbol = null;
+            lastSlot.slot.setTexture('emptySlot');
+            lastSlot.slot.setAlpha(1);
+            lastSlot.slot.setScale(1);
+            continueAfterFadeout();
+            tweensToWait--;
+            checkAllDone();
+          }
+        });
+      } else {
+        continueAfterFadeout();
       }
-    }
+
+      const checkAllDone = () => {
+        if (tweensToWait <= 0) {
+          this.endTurnActive = true;
+        }
+      };
+
+    });
   }
 
-  // Chance: 100% - 1% per other cherry
-  const chance = Math.max(0.15, 1 - 0.03 * otherCherries); // 3% reduction per cherry, min 10%
 
-  // Apply shape-based bonus only if roll succeeds
-  if (Math.random() < chance) {
-    let valueChange = 0;
+  applyCoconutEffect(symbol, slot) {
     const dirs = [
-      { x: 0, y: -1 },
-      { x: 0, y: 1 },
-      { x: -1, y: 0 },
-      { x: 1, y: 0 },
+      { x: -1, y: -1 }, { x: 0, y: -1 }, { x: 1, y: -1 },
+      { x: -1, y: 0 }, { x: 1, y: 0 },
+      { x: -1, y: 1 }, { x: 0, y: 1 }, { x: 1, y: 1 },
     ];
 
     for (let d of dirs) {
@@ -771,236 +862,383 @@ applySymbolEffects() {
 
       const neighbor = this.slots[ny][nx];
       if (neighbor.used && neighbor.symbol) {
-        const nType = neighbor.symbol.symbolData.type;
-        if (nType === 'fruit') valueChange += 1;
-      }
-    }
-
-    data.baseValue += valueChange;
-    if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
-  }
-}
-
-      // Banana effect: +1 every turn, 15% chance to be destroyed
-if (data.key === 'banana') {
-  data.baseValue += 1;
-  symbol.valueText.setText(data.baseValue.toString());
-
-  // 15% destroy chance
-  if (Math.random() < 0.15) {
-    // find the slot and clear it
-    slot.used = false;
-    slot.symbol = null;
-    slot.setTexture('emptySlot');
-
-    // fade out and destroy
-    this.tweens.add({
-      targets: [symbol, symbol.valueText],
-      alpha: 0,
-      duration: 300,
-      onComplete: () => {
-        symbol.destroy();
-        if (symbol.valueText) symbol.valueText.destroy();
-      }
-    });
-  }
-}
-// Strawberry effect: +1 if NOT surrounded by any fruits in all 8 directions
-if (data.key === 'strawberry') {
-  const dirs = [
-    { x: -1, y: -1 }, { x: 0, y: -1 }, { x: 1, y: -1 },
-    { x: -1, y: 0 },                  { x: 1, y: 0 },
-    { x: -1, y: 1 },  { x: 0, y: 1 },  { x: 1, y: 1 },
-  ];
-
-  let hasFruitNearby = false;
-
-  for (let d of dirs) {
-    const nx = slot.gridX + d.x;
-    const ny = slot.gridY + d.y;
-    if (ny < 0 || ny >= this.slots.length) continue;
-    if (nx < 0 || nx >= this.slots[0].length) continue;
-
-    const neighbor = this.slots[ny][nx];
-    if (neighbor.used && neighbor.symbol) {
-      const nType = neighbor.symbol.symbolData.type;
-      if (nType === 'fruit') {
-        hasFruitNearby = true;
-        break;
+        const nSym = neighbor.symbol;
+        const nData = nSym.symbolData;
+        if (nData.key !== 'coconut') {
+          if (!Array.isArray(nSym.isProtected)) nSym.isProtected = [];
+          nSym.isProtected.push([0, symbol, () => this.coconutSum(symbol)]);
+        }
       }
     }
   }
 
-  if (!hasFruitNearby) {
-    data.baseValue += 1;
-    symbol.valueText.setText(data.baseValue.toString());
-  }
-}
-
-// Orange effect: +1 for each fruit in an X shape, each affected fruit -1 if >1
-if (data.key === 'orange') {
-  const dirs = [
-    { x: -1, y: -1 }, { x: 1, y: -1 },
-    { x: -1, y: 1 },  { x: 1, y: 1 },
-  ];
-
-  let gain = 0;
-  const neighborsToDecrease = [];
-
-  for (let d of dirs) {
-    const nx = slot.gridX + d.x;
-    const ny = slot.gridY + d.y;
-    if (ny < 0 || ny >= this.slots.length) continue;
-    if (nx < 0 || nx >= this.slots[0].length) continue;
-
-    const neighbor = this.slots[ny][nx];
-    const nSymbol = neighbor?.symbol;
-    const nData = nSymbol?.symbolData;
-
-    // Skip if no symbol, no data, or other orange
-    if (!nSymbol || !nData || nData.key === 'orange') continue;
-
-    if (nData.type === 'fruit' && nData.baseValue > 1) {
-      gain += 2;
-      neighborsToDecrease.push(nSymbol);
+  coconutSum(symbol) {
+    symbol.symbolData.baseValue += 1;
+    if (symbol.valueText) {
+      symbol.valueText.setText(symbol.symbolData.baseValue.toString());
     }
   }
 
-  // Reduce neighbors after calculating gain
-  neighborsToDecrease.forEach(nSymbol => {
-    const nData = nSymbol.symbolData;
-    nData.baseValue = Math.max(1, nData.baseValue - 1);
-    if (nSymbol.valueText) nSymbol.valueText.setText(nData.baseValue.toString());
-  });
-
-  if (gain > 0) {
-    data.baseValue += gain;
-    if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
-  }
-}
-
-if (data.key === 'lemon') {
-  // + shape
-  const plusDirs = [
-    { x: 0, y: -1 },
-    { x: 0, y: 1 },
-    { x: -1, y: 0 },
-    { x: 1, y: 0 },
-  ];
-
-  // X shape
-  const xDirs = [
-    { x: -1, y: -1 }, { x: 1, y: -1 },
-    { x: -1, y: 1 },  { x: 1, y: 1 },
-  ];
-
-  let gain = 0;
-  let hasOtherFruit = false;
-
-  // Check diagonals for other fruits
-  for (let d of xDirs) {
-    const nx = slot.gridX + d.x;
-    const ny = slot.gridY + d.y;
-    if (ny < 0 || ny >= this.slots.length) continue;
-    if (nx < 0 || nx >= this.slots[0].length) continue;
-
-    const neighbor = this.slots[ny][nx];
-    if (neighbor.used && neighbor.symbol) {
-      const nData = neighbor.symbol.symbolData;
-      if (nData.type === 'fruit' && nData.key !== 'lemon') {
-        hasOtherFruit = true;
-        break;
+  checkDestructionType(symbol, data) {
+    if (data.destructionType === "sameKey") {
+      const result = [];
+      for (let row of this.slots) {
+        for (let slot of row) {
+          if (slot.used && slot.symbol && slot.symbol.isProtected.length === 0) {
+            const sData = slot.symbol.symbolData;
+            if (sData.key === data.key) result.push(slot.symbol);
+          }
+        }
       }
+      return result;
     }
+    return [symbol];
   }
 
-  if (!hasOtherFruit) {
-    for (let d of plusDirs) {
-      const nx = slot.gridX + d.x;
-      const ny = slot.gridY + d.y;
-      if (ny < 0 || ny >= this.slots.length) continue;
-      if (nx < 0 || nx >= this.slots[0].length) continue;
 
-      const neighbor = this.slots[ny][nx];
-      if (neighbor.used && neighbor.symbol) {
-        const nData = neighbor.symbol.symbolData;
-        if (nData.key === 'lemon') gain += 1;
-      }
-    }
+  // --- SYMBOL EFFECTS ---
+  applySymbolEffects() {
 
-    if (gain > 0) {
-      data.baseValue += gain;
-      if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
-    }
-  }
-}
+    // reset protection flags
+    for (let row of this.slots)
+      for (let slot of row)
+        if (slot.used && slot.symbol)
+          slot.symbol.isProtected = [];
 
-if (data.key === 'watermelon') {
-    const nx = slot.gridX;
-    const ny = slot.gridY + 1;
+    for (let row of this.slots)
+      for (let slot of row)
+        if (slot.used && slot.symbol?.symbolData.key === 'coconut')
+          this.applyCoconutEffect(slot.symbol, slot);
 
-    // Gain +1 every turn
-    data.baseValue += 1;
-    if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
+    for (let row of this.slots) {
+      for (let slot of row) {
+        if (!slot.used || !slot.symbol) continue;
 
-    // Check the symbol below
-    if (ny >= 0 && ny < this.slots.length && nx >= 0 && nx < this.slots[0].length) {
-        const below = this.slots[ny][nx];
-        if (below.used && below.symbol) {
-            const bSym = below.symbol;
-            const bData = bSym.symbolData;
+        const symbol = slot.symbol;
+        const data = symbol.symbolData;
 
-            // If below is a watermelon, destroy both
-            if (bData.key === 'watermelon') {
-                // Destroy current symbol
+        if (data.key === 'cherry') {
+          // Count cherries on the grid except this one
+          let otherCherries = 0;
+          for (let row of this.slots) {
+            for (let s of row) {
+              if (s.used && s.symbol && s.symbol.symbolData.key === 'cherry' && s !== slot) {
+                otherCherries++;
+              }
+            }
+          }
+
+          // Chance: 100% - 1% per other cherry
+          const chance = Math.max(0.15, 1 - 0.03 * otherCherries); // 3% reduction per cherry, min 10%
+
+          // Apply shape-based bonus only if roll succeeds
+          if (Math.random() < chance) {
+            let valueChange = 0;
+            const dirs = [
+              { x: 0, y: -1 },
+              { x: 0, y: 1 },
+              { x: -1, y: 0 },
+              { x: 1, y: 0 },
+            ];
+
+            for (let d of dirs) {
+              const nx = slot.gridX + d.x;
+              const ny = slot.gridY + d.y;
+              if (ny < 0 || ny >= this.slots.length) continue;
+              if (nx < 0 || nx >= this.slots[0].length) continue;
+
+              const neighbor = this.slots[ny][nx];
+              if (neighbor.used && neighbor.symbol) {
+                const nType = neighbor.symbol.symbolData.type;
+                if (nType === 'fruit') valueChange += 1;
+              }
+            }
+
+            data.baseValue += valueChange;
+            if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
+          }
+        }
+
+        // Banana effect: +1 every turn, 15% chance to be destroyed
+        if (data.key === 'banana') {
+          data.baseValue += 1;
+          symbol.valueText.setText(data.baseValue.toString());
+
+          // 5% destroy chance
+          if (Math.random() < 0.05) {
+
+            // if protected, trigger protection functions instead of destruction
+            if (Array.isArray(symbol.isProtected) && symbol.isProtected.length > 0) {
+              for (const [_, protector, fn] of symbol.isProtected) {
+                if (typeof fn === 'function') fn();
+              }
+              return; // skip destruction
+            }
+            // find the slot and clear it
+            slot.used = false;
+            slot.symbol = null;
+            slot.setTexture('emptySlot');
+
+            // fade out and destroy
+            this.tweens.add({
+              targets: [symbol, symbol.valueText],
+              alpha: 0,
+              duration: 300,
+              onComplete: () => {
+                symbol.destroy();
+                if (symbol.valueText) symbol.valueText.destroy();
+              }
+            });
+          }
+        }
+        // Strawberry effect: +1 if NOT surrounded by any fruits in all 8 directions
+        if (data.key === 'strawberry') {
+          const dirs = [
+            { x: -1, y: -1 }, { x: 0, y: -1 }, { x: 1, y: -1 },
+            { x: -1, y: 0 }, { x: 1, y: 0 },
+            { x: -1, y: 1 }, { x: 0, y: 1 }, { x: 1, y: 1 },
+          ];
+
+          let hasFruitNearby = false;
+
+          for (let d of dirs) {
+            const nx = slot.gridX + d.x;
+            const ny = slot.gridY + d.y;
+            if (ny < 0 || ny >= this.slots.length) continue;
+            if (nx < 0 || nx >= this.slots[0].length) continue;
+
+            const neighbor = this.slots[ny][nx];
+            if (neighbor.used && neighbor.symbol) {
+              const nType = neighbor.symbol.symbolData.type;
+              if (nType === 'fruit') {
+                hasFruitNearby = true;
+                break;
+              }
+            }
+          }
+
+          if (!hasFruitNearby) {
+            data.baseValue += 1;
+            symbol.valueText.setText(data.baseValue.toString());
+          }
+        }
+
+        // Orange effect: +1 for each fruit in an X shape, each affected fruit -1 if >1
+        if (data.key === 'orange') {
+          const dirs = [
+            { x: -1, y: -1 }, { x: 1, y: -1 },
+            { x: -1, y: 1 }, { x: 1, y: 1 },
+          ];
+
+          let gain = 0;
+          const neighborsToDecrease = [];
+
+          for (let d of dirs) {
+            const nx = slot.gridX + d.x;
+            const ny = slot.gridY + d.y;
+            if (ny < 0 || ny >= this.slots.length) continue;
+            if (nx < 0 || nx >= this.slots[0].length) continue;
+
+            const neighbor = this.slots[ny][nx];
+            const nSymbol = neighbor?.symbol;
+            const nData = nSymbol?.symbolData;
+
+            // Skip if no symbol, no data, or other orange
+            if (!nSymbol || !nData || nData.key === 'orange') continue;
+
+            if (nData.type === 'fruit' && nData.baseValue > 1) {
+              gain += 2;
+              neighborsToDecrease.push(nSymbol);
+            }
+          }
+
+          // Reduce neighbors after calculating gain
+          neighborsToDecrease.forEach(nSymbol => {
+            const nData = nSymbol.symbolData;
+            nData.baseValue = Math.max(1, nData.baseValue - 1);
+            if (nSymbol.valueText) nSymbol.valueText.setText(nData.baseValue.toString());
+          });
+
+          if (gain > 0) {
+            data.baseValue += gain;
+            if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
+          }
+        }
+
+        if (data.key === 'lemon') {
+          // + shape
+          const plusDirs = [
+            { x: 0, y: -1 },
+            { x: 0, y: 1 },
+            { x: -1, y: 0 },
+            { x: 1, y: 0 },
+          ];
+
+          // X shape
+          const xDirs = [
+            { x: -1, y: -1 }, { x: 1, y: -1 },
+            { x: -1, y: 1 }, { x: 1, y: 1 },
+          ];
+
+          let gain = 0;
+          let hasOtherFruit = false;
+
+          // Check diagonals for other fruits
+          for (let d of xDirs) {
+            const nx = slot.gridX + d.x;
+            const ny = slot.gridY + d.y;
+            if (ny < 0 || ny >= this.slots.length) continue;
+            if (nx < 0 || nx >= this.slots[0].length) continue;
+
+            const neighbor = this.slots[ny][nx];
+            if (neighbor.used && neighbor.symbol) {
+              const nData = neighbor.symbol.symbolData;
+              if (nData.type === 'fruit' && nData.key !== 'lemon') {
+                hasOtherFruit = true;
+                break;
+              }
+            }
+          }
+
+          if (!hasOtherFruit) {
+            for (let d of plusDirs) {
+              const nx = slot.gridX + d.x;
+              const ny = slot.gridY + d.y;
+              if (ny < 0 || ny >= this.slots.length) continue;
+              if (nx < 0 || nx >= this.slots[0].length) continue;
+
+              const neighbor = this.slots[ny][nx];
+              if (neighbor.used && neighbor.symbol) {
+                const nData = neighbor.symbol.symbolData;
+                if (nData.key === 'lemon') gain += 1;
+              }
+            }
+
+            if (gain > 0) {
+              data.baseValue += gain;
+              if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
+            }
+          }
+        }
+
+
+        if (data.key === 'watermelon') {
+          const nx = slot.gridX;
+          const ny = slot.gridY + 1;
+
+          // +1 every turn
+          data.baseValue += 1;
+          if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
+
+          if (ny >= 0 && ny < this.slots.length && nx >= 0 && nx < this.slots[0].length) {
+            const below = this.slots[ny][nx];
+            if (below.used && below.symbol) {
+              const bSym = below.symbol;
+              const bData = bSym.symbolData;
+
+              // protected?
+              if (Array.isArray(bSym.isProtected) && bSym.isProtected.length > 0) {
+                for (const [_, protector, fn] of bSym.isProtected) {
+                  if (typeof fn === 'function') fn();
+                }
+                continue;
+              }
+
+              if (bData.key === 'watermelon') {
+                // destroy both
                 const currentSlot = this.findSlotForSymbol(symbol);
                 if (currentSlot) {
-                    currentSlot.used = false;
-                    currentSlot.symbol = null;
-                    currentSlot.setTexture('emptySlot');
+                  currentSlot.used = false;
+                  currentSlot.symbol = null;
+                  currentSlot.setTexture('emptySlot');
                 }
 
-                this.tweens.add({
-                    targets: [symbol, symbol.valueText],
-                    alpha: 0,
-                    duration: 200,
-                    onComplete: () => {
-                        if (symbol.valueText) symbol.valueText.destroy();
-                        symbol.destroy();
-                    }
-                });
-
-                // Destroy the one below
                 below.used = false;
                 below.symbol = null;
                 below.setTexture('emptySlot');
 
                 this.tweens.add({
-                    targets: [bSym, bSym.valueText],
-                    alpha: 0,
-                    duration: 200,
-                    onComplete: () => {
-                        if (bSym.valueText) bSym.valueText.destroy();
-                        bSym.destroy();
-                    }
+                  targets: [symbol, symbol.valueText],
+                  alpha: 0,
+                  duration: 200,
+                  onComplete: () => {
+                    if (symbol.valueText) symbol.valueText.destroy();
+                    symbol.destroy();
+                  }
                 });
-            } else if (bData.type === 'fruit') {
-                // Otherwise, destroy only the symbol below (normal watermelon behavior)
-                below.used = false;
-                below.symbol = null;
-                below.setTexture('emptySlot');
 
                 this.tweens.add({
-                    targets: [bSym, bSym.valueText],
+                  targets: [bSym, bSym.valueText],
+                  alpha: 0,
+                  duration: 200,
+                  onComplete: () => {
+                    if (bSym.valueText) bSym.valueText.destroy();
+                    bSym.destroy();
+                  }
+                });
+              } else if (bData.type === 'fruit') {
+                const symbolsToDestroy = this.checkDestructionType(bSym, bData);
+                for (const s of symbolsToDestroy) {
+                  const sSlot = this.findSlotForSymbol(s);
+                  if (!sSlot) continue;
+
+                  sSlot.used = false;
+                  sSlot.symbol = null;
+                  sSlot.setTexture('emptySlot');
+
+                  this.tweens.add({
+                    targets: [s, s.valueText],
                     alpha: 0,
                     duration: 200,
                     onComplete: () => {
-                        if (bSym.valueText) bSym.valueText.destroy();
-                        bSym.destroy();
+                      if (s.valueText) s.valueText.destroy();
+                      s.destroy();
                     }
-                });
+                  });
+                }
+
+
+              }
+            }
+          }
+        }
+
+        if (data.key === 'grape') {
+          // Count all other grapes on the grid
+          let grapeCount = 0;
+          for (let r of this.slots) {
+            for (let s of r) {
+              if (s.used && s.symbol && s.symbol.symbolData.key === 'grape' && s.symbol !== symbol) {
+                grapeCount++;
+              }
+            }
+          }
+          // Add the value bonus
+          if (grapeCount > 0) {
+            data.baseValue += grapeCount;
+            if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
+          }
+        }
+
+       if (data.key === 'peach') {
+    const nx = slot.gridX;
+    const ny = slot.gridY;
+    const maxX = this.slots[0].length - 1;
+    const maxY = this.slots.length - 1;
+
+    // Trigger for any edge
+    if (nx === 0 || nx === maxX || ny === 0 || ny === maxY) {
+        let gain = 0;
+        for (let row of this.slots) {
+            for (let s of row) {
+                if (s.used && s.symbol && s.symbol.symbolData.type === 'fruit') {
+                    gain += 1;
+                }
             }
         }
+
+        data.baseValue += gain;
+        if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
     }
 }
 
@@ -1011,22 +1249,11 @@ if (data.key === 'watermelon') {
 
 
 
-
-
-
-
-
-
+      }
     }
   }
-}
-
 
 
 
 
 }
-
-
-
-
