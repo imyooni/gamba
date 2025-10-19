@@ -10,7 +10,7 @@ export default class Game_Scene extends Phaser.Scene {
    }
 
   create() {
-    this.background = this.add.image(this.scale.width / 2, this.scale.height / 2, 'Background').setOrigin(0.5);
+    this.background = this.add.image(this.scale.width / 2, this.scale.height / 2, 'background').setOrigin(0.5);
     
     this.endTurnActive = true
     // Initialize drag tracking variables first
@@ -989,3 +989,4 @@ if (data.key === 'watermelon') {
 
 
 }
+
