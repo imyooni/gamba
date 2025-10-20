@@ -1,12 +1,17 @@
 import * as sprites from '../assets/scripts/sprites.js';
 import * as symbols from '../assets/scripts/symbols.js';
+import { AudioManager } from '../assets/scripts/audio.js';
 
 export default class Game_Scene extends Phaser.Scene {
-  constructor() { super('GameScene'); }
+  constructor() {
+     super('GameScene');
+     this.audioManager = new AudioManager(this);
+    }
 
   preload() {
     sprites.loadGameSprites(this);
-    this.load.audio('menuBgm', 'assets/audio/BGM/MenuBgm.ogg');
+    this.audioManager.loadAudio();
+   // audio.loadGameAudio(this)
   }
 
   create() {
@@ -96,6 +101,7 @@ export default class Game_Scene extends Phaser.Scene {
       return;
     }
 
+    this.audioManager.playSfx('grab',0.35)
     this.draggedSymbol = symbol;
     symbol.setAlpha(0.7);
 
@@ -147,6 +153,7 @@ export default class Game_Scene extends Phaser.Scene {
     // Find the closest valid slot
     const targetSlot = this.findClosestEmptySlot(symbol.x, symbol.y);
 
+    this.audioManager.playSfx('grab',0.35)
     if (targetSlot && !targetSlot.used) {
       // Place symbol in the new slot
       this.placeSymbolInSlot(symbol, targetSlot);
@@ -209,6 +216,7 @@ export default class Game_Scene extends Phaser.Scene {
     if (free.length === 0) return;
     const target = Phaser.Math.RND.pick(free);
     target.used = true
+     this.audioManager.playSfx('selected',0.5)
     // Smooth movement to main grid
     this.tweens.add({
       targets: symbol,
@@ -479,13 +487,9 @@ this.goalText.setVisible(false)
       this.startButton.setVisible(false);
      
 
-      // Play BGM
-      if (!this.menuBgm) {
-        this.menuBgm = this.sound.add('menuBgm', { loop: true, volume: 0.5 });
-      }
-      this.menuBgm.play();
+      this.audioManager.playBgm('menuBgm',0.25);
 
-      this.endDayButton.setVisible(true)
+    
       this.endButton.setVisible(true)
       this.coinsText.setVisible(true)
       this.scoreText.setVisible(true)
@@ -587,9 +591,7 @@ this.goalText.setVisible(false)
 
 gameOver() {
     // Stop BGM if playing
-    if (this.menuBgm && this.menuBgm.isPlaying) {
-        this.menuBgm.stop();
-    }
+     this.audioManager.stopBgm('menuBgm')
 
     // Destroy all symbols on the main grid
     for (let row of this.slots) {
@@ -644,7 +646,8 @@ gameOver() {
 this.goal = Math.ceil(this.goal * 2.25);
 this.goalText.setText(`Goal: ${this.goal}`);
 this.coinsText.setText(`Coins: ${this.coins[0]}/${this.coins[1]}`)
-
+   this.endDayButton.setVisible(false)
+   this.audioManager.playSfx('completed',0.5)
      }
     })
 
@@ -665,6 +668,10 @@ this.coinsText.setText(`Coins: ${this.coins[0]}/${this.coins[1]}`)
 
     endButton.on('pointerdown', () => {
       if (this.coins[0] < 1) return
+      
+
+        
+
       if (!this.inventorySlots || !this.endTurnActive) return;
 
             for (let row of this.slots) {
@@ -674,7 +681,11 @@ this.coinsText.setText(`Coins: ${this.coins[0]}/${this.coins[1]}`)
         }
     }
 }
+this.audioManager.playSfx('coin',0.5)
+this.audioManager.playSfx('shuffle',0.5)
 this.coins[0] -= 1
+
+ if (this.coins[0] < 1) this.endDayButton.setVisible(true)
 this.scoreText.setText(this.score);
 this.coinsText.setText(`Coins: ${this.coins[0]}/${this.coins[1]}`);
 
@@ -1252,7 +1263,6 @@ this.coinsText.setText(`Coins: ${this.coins[0]}/${this.coins[1]}`);
       }
     }
   }
-
 
 
 
