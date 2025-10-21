@@ -630,7 +630,7 @@ gameOver() {
 
   createEndDayButton() {
     const { width } = this.scale;
-     const endDayButton = this.add.text(width - 80, 60, 'END DAY', {
+     const endDayButton = this.add.text(width - 80, 20, 'END DAY', {
     fontSize: '20px',
     color: '#ffffff',
     backgroundColor: '#000000',
@@ -1263,6 +1263,7 @@ this.coinsText.setText(`Coins: ${this.coins[0]}/${this.coins[1]}`);
       }
     }
   }
+
 
 
 
