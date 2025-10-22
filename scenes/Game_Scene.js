@@ -625,6 +625,8 @@ gameOver() {
     this.scoreText.setVisible(false)
     this.goalText.setVisible(false)
     this.startButton.setVisible(true)
+    this.coinsText.setText(`Coins: ${this.coins[0]}/${this.coins[1]}`)
+    this.scoreText.setText(`0`)
 }
 
 
@@ -1269,4 +1271,5 @@ this.coinsText.setText(`Coins: ${this.coins[0]}/${this.coins[1]}`);
 
 
 }
+
 
