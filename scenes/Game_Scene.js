@@ -445,12 +445,12 @@ export default class Game_Scene extends Phaser.Scene {
 this.startButton = startBtn
 
 this.days = 1;
-this.daysText = this.add.text(20, 10, '1', {
+this.daysText = this.add.text(20, 10, 'Day 1', {
     fontFamily: 'DefaultFont',
         fontSize: '24px',
         stroke: '#000000',
         strokeThickness: 4,
-        fill: '#ffd000ff'
+        fill: '#F4A460'
 })
 this.daysText.setVisible(false)
 
@@ -659,7 +659,7 @@ gameOver() {
       this.gameOver()
      } else {
        this.days += 1
-       this.daysText.setText(`${this.days}`)
+       this.daysText.setText(`Day ${this.days}`)
       this.coins[0] = this.coins[1]
 this.goal = Math.ceil(this.goal * 2.25);
 this.goalText.setText(`Goal: ${this.goal}`);
@@ -1286,6 +1286,7 @@ this.coinsText.setText(`Coins: ${this.coins[0]}/${this.coins[1]}`);
 
 
 }
+
 
 
 
