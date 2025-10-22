@@ -633,7 +633,7 @@ gameOver() {
      const endDayButton = this.add.text(width - 80, 20, 'END DAY', {
     fontSize: '20px',
     color: '#ffffff',
-    backgroundColor: '#000000',
+    backgroundColor: '#CD5C5C',
     padding: { x: 10, y: 5 }
   }).setOrigin(0.5).setVisible(false).setInteractive();
    this.endDayButton = endDayButton
@@ -1269,3 +1269,4 @@ this.coinsText.setText(`Coins: ${this.coins[0]}/${this.coins[1]}`);
 
 
 }
+
