@@ -989,36 +989,71 @@ this.coinsText.setText(`Coins: ${this.coins[0]}/${this.coins[1]}`);
 
         // Banana effect: +1 every turn, 15% chance to be destroyed
         if (data.key === 'banana') {
-          data.baseValue += 1;
-          symbol.valueText.setText(data.baseValue.toString());
+  data.baseValue += 1;
+  if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
 
-          // 5% destroy chance
-          if (Math.random() < 0.05) {
+  // 5% destroy chance
+  if (Math.random() < 0.05) {
 
-            // if protected, trigger protection functions instead of destruction
-            if (Array.isArray(symbol.isProtected) && symbol.isProtected.length > 0) {
-              for (const [_, protector, fn] of symbol.isProtected) {
-                if (typeof fn === 'function') fn();
-              }
-              return; // skip destruction
-            }
-            // find the slot and clear it
-            slot.used = false;
-            slot.symbol = null;
-            slot.setTexture('emptySlot');
+    // protected
+    if (Array.isArray(symbol.isProtected) && symbol.isProtected.length > 0) {
+      for (const [_, protector, fn] of symbol.isProtected) {
+        if (typeof fn === 'function') fn();
+      }
+      return;
+    }
 
-            // fade out and destroy
-            this.tweens.add({
-              targets: [symbol, symbol.valueText],
-              alpha: 0,
-              duration: 300,
-              onComplete: () => {
-                symbol.destroy();
-                if (symbol.valueText) symbol.valueText.destroy();
-              }
-            });
-          }
+    // find nearby fruits
+    const dirs = [
+      [0, -1], [0, 1], [-1, 0], [1, 0], // up down left right
+      [-1, -1], [1, -1], [-1, 1], [1, 1] // diagonals
+    ];
+    const nearby = [];
+
+    for (const [dx, dy] of dirs) {
+      const nx = slot.gridX + dx;
+      const ny = slot.gridY + dy;
+      if (ny >= 0 && ny < this.slots.length && nx >= 0 && nx < this.slots[0].length) {
+        const s = this.slots[ny][nx];
+        if (s.used && s.symbol && s.symbol.symbolData.type === 'fruit') {
+          nearby.push(s.symbol);
         }
+      }
+    }
+
+    if (nearby.length > 0) {
+      const target = Phaser.Utils.Array.GetRandom(nearby);
+      const tData = target.symbolData;
+      tData.baseValue = Math.floor(tData.baseValue * 2);
+      if (target.valueText) target.valueText.setText(tData.baseValue.toString());
+
+      // quick visual pulse
+      this.tweens.add({
+        targets: [target],
+        scale: 1.3,
+        duration: 100,
+        yoyo: true
+      });
+    }
+
+    // destroy banana
+    slot.used = false;
+    slot.symbol = null;
+    slot.setTexture('emptySlot');
+
+    this.tweens.add({
+      targets: [symbol, symbol.valueText],
+      alpha: 0,
+      duration: 300,
+      onComplete: () => {
+        if (symbol.valueText) symbol.valueText.destroy();
+        symbol.destroy();
+      }
+    });
+  }
+}
+
+        
         // Strawberry effect: +1 if NOT surrounded by any fruits in all 8 directions
         if (data.key === 'strawberry') {
           const dirs = [
@@ -1290,6 +1325,7 @@ this.coinsText.setText(`Coins: ${this.coins[0]}/${this.coins[1]}`);
 
 
 }
+
 
 
 
