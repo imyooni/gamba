@@ -1151,85 +1151,89 @@ this.coinsText.setText(`Coins: ${this.coins[0]}/${this.coins[1]}`);
 
 
         if (data.key === 'watermelon') {
-          const nx = slot.gridX;
-          const ny = slot.gridY + 1;
+  const nx = slot.gridX;
+  const ny = slot.gridY + 1;
 
-          // +1 every turn
-          data.baseValue += 1;
-          if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
+  // +1 every turn
+  data.baseValue += 1;
+  if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
 
-          if (ny >= 0 && ny < this.slots.length && nx >= 0 && nx < this.slots[0].length) {
-            const below = this.slots[ny][nx];
-            if (below.used && below.symbol) {
-              const bSym = below.symbol;
-              const bData = bSym.symbolData;
+  if (ny >= 0 && ny < this.slots.length && nx >= 0 && nx < this.slots[0].length) {
+    const below = this.slots[ny][nx];
+    if (below.used && below.symbol) {
+      const bSym = below.symbol;
+      const bData = bSym.symbolData;
 
-              // protected?
-              if (Array.isArray(bSym.isProtected) && bSym.isProtected.length > 0) {
-                for (const [_, protector, fn] of bSym.isProtected) {
-                  if (typeof fn === 'function') fn();
-                }
-                continue;
-              }
-
-              if (bData.key === 'watermelon') {
-                // destroy both
-                const currentSlot = this.findSlotForSymbol(symbol);
-                if (currentSlot) {
-                  currentSlot.used = false;
-                  currentSlot.symbol = null;
-                  currentSlot.setTexture('emptySlot');
-                }
-
-                below.used = false;
-                below.symbol = null;
-                below.setTexture('emptySlot');
-
-                this.tweens.add({
-                  targets: [symbol, symbol.valueText],
-                  alpha: 0,
-                  duration: 200,
-                  onComplete: () => {
-                    if (symbol.valueText) symbol.valueText.destroy();
-                    symbol.destroy();
-                  }
-                });
-
-                this.tweens.add({
-                  targets: [bSym, bSym.valueText],
-                  alpha: 0,
-                  duration: 200,
-                  onComplete: () => {
-                    if (bSym.valueText) bSym.valueText.destroy();
-                    bSym.destroy();
-                  }
-                });
-              } else if (bData.type === 'fruit') {
-                const symbolsToDestroy = this.checkDestructionType(bSym, bData);
-                for (const s of symbolsToDestroy) {
-                  const sSlot = this.findSlotForSymbol(s);
-                  if (!sSlot) continue;
-
-                  sSlot.used = false;
-                  sSlot.symbol = null;
-                  sSlot.setTexture('emptySlot');
-
-                  this.tweens.add({
-                    targets: [s, s.valueText],
-                    alpha: 0,
-                    duration: 200,
-                    onComplete: () => {
-                      if (s.valueText) s.valueText.destroy();
-                      s.destroy();
-                    }
-                  });
-                }
-
-
-              }
-            }
-          }
+      // protected?
+      if (Array.isArray(bSym.isProtected) && bSym.isProtected.length > 0) {
+        for (const [_, protector, fn] of bSym.isProtected) {
+          if (typeof fn === 'function') fn();
         }
+        return; // skip further destruction
+      }
+
+      if (bData.key === 'watermelon') {
+        // destroy both watermelons
+        const currentSlot = this.findSlotForSymbol(symbol);
+        if (currentSlot) {
+          currentSlot.used = false;
+          currentSlot.symbol = null;
+          currentSlot.setTexture('emptySlot');
+        }
+
+        below.used = false;
+        below.symbol = null;
+        below.setTexture('emptySlot');
+
+        this.tweens.add({
+          targets: [symbol, symbol.valueText],
+          alpha: 0,
+          duration: 200,
+          onComplete: () => {
+            if (symbol.valueText) symbol.valueText.destroy();
+            symbol.destroy();
+          }
+        });
+
+        this.tweens.add({
+          targets: [bSym, bSym.valueText],
+          alpha: 0,
+          duration: 200,
+          onComplete: () => {
+            if (bSym.valueText) bSym.valueText.destroy();
+            bSym.destroy();
+          }
+        });
+      } 
+      else if (bData.type === 'fruit') {
+        // absorb the fruit's value before destruction
+        data.baseValue += bData.baseValue;
+        if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
+
+        const symbolsToDestroy = this.checkDestructionType(bSym, bData);
+        for (const s of symbolsToDestroy) {
+          const sSlot = this.findSlotForSymbol(s);
+          if (!sSlot) continue;
+
+          sSlot.used = false;
+          sSlot.symbol = null;
+          sSlot.setTexture('emptySlot');
+
+          this.tweens.add({
+            targets: [s, s.valueText],
+            alpha: 0,
+            duration: 200,
+            onComplete: () => {
+              if (s.valueText) s.valueText.destroy();
+              s.destroy();
+            }
+          });
+        }
+      }
+    }
+  }
+}
+
 
         if (data.key === 'grape') {
           // Count all other grapes on the grid
@@ -1286,6 +1290,7 @@ this.coinsText.setText(`Coins: ${this.coins[0]}/${this.coins[1]}`);
 
 
 }
+
 
 
 
