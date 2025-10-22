@@ -443,6 +443,17 @@ export default class Game_Scene extends Phaser.Scene {
       }
     }).setOrigin(0.5).setInteractive();
 this.startButton = startBtn
+
+this.days = 1;
+this.daysText = this.add.text(20, 10, '1', {
+    fontFamily: 'DefaultFont',
+        fontSize: '24px',
+        stroke: '#000000',
+        strokeThickness: 4,
+        fill: '#ffd000ff'
+})
+this.daysText.setVisible(false)
+
  this.score = 0;
 this.scoreText = this.add.text(20, 110, '0', {
     fontFamily: 'DefaultFont',
@@ -462,7 +473,6 @@ this.coinsText = this.add.text(20, 80, `Coins: ${this.coins[0]}/${this.coins[1]}
         fill: '#ffd000ff'
 })
 this.coinsText.setVisible(false)
-
 
  this.goal = 50;
 this.goalText = this.add.text(210, 110, 'Goal: 50', {
@@ -494,6 +504,7 @@ this.goalText.setVisible(false)
       this.coinsText.setVisible(true)
       this.scoreText.setVisible(true)
       this.goalText.setVisible(true)
+      this.daysText.setVisible(true)
 
       // Fill inventory
       const emptySlots = this.inventorySlots.filter(s => !s.symbol || s.symbol.placedOnGrid);
@@ -618,13 +629,16 @@ gameOver() {
 
     this.score = 0
     this.goal = 50;
-    this.coins = [5,5]
+    this.coins = [5,5] 
+    this.days = 1
     this.endDayButton.setVisible(false)
     this.endButton.setVisible(false)
     this.coinsText.setVisible(false)
     this.scoreText.setVisible(false)
     this.goalText.setVisible(false)
     this.startButton.setVisible(true)
+    this.daysText.setVisible(false)
+    this.daysText.setText('1')
     this.coinsText.setText(`Coins: ${this.coins[0]}/${this.coins[1]}`)
     this.scoreText.setText(`0`)
 }
@@ -644,6 +658,8 @@ gameOver() {
      if (this.score < this.goal) {
       this.gameOver()
      } else {
+       this.days += 1
+       this.daysText.setText(`${this.days}`)
       this.coins[0] = this.coins[1]
 this.goal = Math.ceil(this.goal * 2.25);
 this.goalText.setText(`Goal: ${this.goal}`);
@@ -665,7 +681,6 @@ this.coinsText.setText(`Coins: ${this.coins[0]}/${this.coins[1]}`)
       padding: { x: 10, y: 5 }
     }).setOrigin(0.5).setVisible(false).setInteractive();
      this.endButton = endButton
-
      
 
     endButton.on('pointerdown', () => {
@@ -1271,6 +1286,7 @@ this.coinsText.setText(`Coins: ${this.coins[0]}/${this.coins[1]}`);
 
 
 }
+
 
 
 
