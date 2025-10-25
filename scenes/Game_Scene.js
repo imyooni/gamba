@@ -1098,67 +1098,68 @@ export default class Game_Scene extends Phaser.Scene {
         if (data.key === 'banana') {
           data.baseValue += 1;
           if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
-
-          // 5% destroy chance
-          if (Math.random() < 0.05) {
-
-            // protected
+          if (Math.random() < 0.10) {
             if (Array.isArray(symbol.isProtected) && symbol.isProtected.length > 0) {
               for (const [_, protector, fn] of symbol.isProtected) {
                 if (typeof fn === 'function') fn();
               }
-              return;
-            }
+            } else {
+              // Directions around banana (8-way)
+              const dirs = [
+                { x: -1, y: -1 }, { x: 0, y: -1 }, { x: 1, y: -1 },
+                { x: -1, y: 0 }, { x: 1, y: 0 },
+                { x: -1, y: 1 }, { x: 0, y: 1 }, { x: 1, y: 1 },
+              ];
 
-            // find nearby fruits
-            const dirs = [
-              [0, -1], [0, 1], [-1, 0], [1, 0], // up down left right
-              [-1, -1], [1, -1], [-1, 1], [1, 1] // diagonals
-            ];
-            const nearby = [];
+              const nearby = [];
 
-            for (const [dx, dy] of dirs) {
-              const nx = slot.gridX + dx;
-              const ny = slot.gridY + dy;
-              if (ny >= 0 && ny < this.slots.length && nx >= 0 && nx < this.slots[0].length) {
-                const s = this.slots[ny][nx];
-                if (s.used && s.symbol && s.symbol.symbolData.type === 'fruit') {
-                  nearby.push(s.symbol);
+              for (let d of dirs) {
+                const nx = slot.gridX + d.x;
+                const ny = slot.gridY + d.y;
+                if (ny < 0 || ny >= this.slots.length) continue;
+                if (nx < 0 || nx >= this.slots[0].length) continue;
+
+                const neighbor = this.slots[ny][nx];
+                if (neighbor.used && neighbor.symbol) {
+                  const nData = neighbor.symbol.symbolData;
+                  if (nData.type === 'fruit') nearby.push(neighbor.symbol);
                 }
               }
-            }
 
-            if (nearby.length > 0) {
-              const target = Phaser.Utils.Array.GetRandom(nearby);
-              const tData = target.symbolData;
-              tData.baseValue = Math.floor(tData.baseValue * 2);
-              if (target.valueText) target.valueText.setText(tData.baseValue.toString());
+              // Double one random nearby fruit
+              if (nearby.length > 0) {
+                const target = Phaser.Utils.Array.GetRandom(nearby);
+                const tData = target.symbolData;
+                tData.baseValue = Math.floor(tData.baseValue * 2);
+                if (target.valueText) target.valueText.setText(tData.baseValue.toString());
 
-              // quick visual pulse
+                // visual pulse
+                this.tweens.add({
+                  targets: [target],
+                  scale: 1.3,
+                  duration: 100,
+                  yoyo: true
+                });
+              }
+
+              // Destroy banana
+              slot.used = false;
+              slot.symbol = null;
+              slot.setTexture('baseSlots', 0);
+
               this.tweens.add({
-                targets: [target],
-                scale: 1.3,
-                duration: 100,
-                yoyo: true
+                targets: [symbol, symbol.valueText],
+                alpha: 0,
+                duration: 300,
+                onComplete: () => {
+                  if (symbol.valueText) symbol.valueText.destroy();
+                  symbol.destroy();
+                }
               });
             }
-
-            // destroy banana
-            slot.used = false;
-            slot.symbol = null;
-            slot.setTexture('baseSlots', 0);
-
-            this.tweens.add({
-              targets: [symbol, symbol.valueText],
-              alpha: 0,
-              duration: 300,
-              onComplete: () => {
-                if (symbol.valueText) symbol.valueText.destroy();
-                symbol.destroy();
-              }
-            });
           }
         }
+
 
 
         // █ STRAWBERRY █ //
@@ -1217,7 +1218,7 @@ export default class Game_Scene extends Phaser.Scene {
             if (!nSymbol || !nData || nData.key === 'orange') continue;
 
             if (nData.type === 'fruit' && nData.baseValue > 1) {
-              gain += 2;
+              gain += 10;
               neighborsToDecrease.push(nSymbol);
             }
           }
@@ -1282,7 +1283,7 @@ export default class Game_Scene extends Phaser.Scene {
               const neighbor = this.slots[ny][nx];
               if (neighbor.used && neighbor.symbol) {
                 const nData = neighbor.symbol.symbolData;
-                if (nData.key === 'lemon') gain += 1;
+                if (nData.key === 'lemon') gain += 5;
               }
             }
 
@@ -1444,7 +1445,7 @@ export default class Game_Scene extends Phaser.Scene {
 
           // 25% chance to reset value
           let reset = false
-          if (Math.random() < 0.25) {
+          if (Math.random() < 0.25 && data.baseValue > 1) {
             data.baseValue = 1;
             reset = true
           }
@@ -1463,6 +1464,48 @@ export default class Game_Scene extends Phaser.Scene {
             });
           }
         }
+
+        // █ PINEAPPLE █ //
+        if (data.key === 'pineapple') {
+          // gather all other symbols
+          const others = [];
+          for (let r of this.slots) {
+            for (let s of r) {
+              if (s.used && s.symbol && s.symbol !== symbol) {
+                others.push(s.symbol);
+              }
+            }
+          }
+
+          if (others.length > 0) {
+            // pick random symbol
+            const target = Phaser.Utils.Array.GetRandom(others);
+            const tData = target.symbolData;
+
+            // swap values
+            const temp = data.baseValue;
+            data.baseValue = tData.baseValue;
+            tData.baseValue = temp;
+
+            // update text
+            if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
+            if (target.valueText) target.valueText.setText(tData.baseValue.toString());
+
+            // visual swap pulse
+            this.tweens.add({
+              targets: [symbol, target],
+              scale: 1.2,
+              duration: 100,
+              yoyo: true
+            });
+          } else {
+            // no symbols to swap
+            data.baseValue += 1;
+            if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
+          }
+        }
+
+
 
 
 

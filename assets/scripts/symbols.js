@@ -81,6 +81,14 @@ export function list() {
       rarity: ["common",0.20],
       type: "fruit"  
     },
+    "pineapple": {
+      sprite: ["fruits",10],
+      name: ["Pineapple","Piña"],
+      baseValue: 1,
+      movement: ["random",1],
+      rarity: ["common",0.20],
+      type: "fruit"  
+    },
   };  
 }
 
