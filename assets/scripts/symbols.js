@@ -89,6 +89,14 @@ export function list() {
       rarity: ["common",0.20],
       type: "fruit"  
     },
+    "apple": {
+      sprite: ["fruits",11],
+      name: ["Apple","Manzana"],
+      baseValue: 1,
+      movement: ["fixed",3],
+      rarity: ["common",0.20],
+      type: "fruit"  
+    },
   };  
 }
 

@@ -51,6 +51,16 @@ export default class Game_Scene extends Phaser.Scene {
     return slotWidth / 2 + 0; // Half slot width + padding
   }
 
+ formatValue(value) {
+    if (value < 1000) return value.toString();                  // 0 - 999
+    if (value < 10000) return (value / 1000).toFixed(1) + 'k'; // 1,000 - 9,999
+    if (value < 100000) return Math.floor(value / 1000) + 'k'; // 10,000 - 99,999
+    if (value < 1000000) return (value / 1000).toFixed(1) + 'k'; // 100,000 - 999,999
+    if (value < 1000000000) return (value / 1000000).toFixed(1) + 'M'; // 1M - 999M
+    if (value < 1000000000000) return (value / 1000000000).toFixed(1) + 'B'; // 1B - 999B
+    return (value / 1000000000000).toFixed(1) + 'T'; // 1T+
+}
+
   // ---------------- GRID ----------------
   createGrid() {
     const { width, height } = this.scale;
@@ -536,18 +546,6 @@ export default class Game_Scene extends Phaser.Scene {
 
       this.daysText.setVisible(true)
       this.audioManager.playBgm('menuBgm', 0.25);
-      /*
-         
-   
-   
-   
-         // Fill inventory
-         const emptySlots = this.inventorySlots.filter(s => !s.symbol || s.symbol.placedOnGrid);
-         for (let i = 0; i < Math.min(4, emptySlots.length); i++) {
-           const index = this.inventorySlots.indexOf(emptySlots[i]);
-           this.addInventorySymbol(emptySlots[i], index);
-         }
-           */
 
 
     });
@@ -1009,7 +1007,7 @@ export default class Game_Scene extends Phaser.Scene {
   coconutSum(symbol) {
     symbol.symbolData.baseValue += 1;
     if (symbol.valueText) {
-      symbol.valueText.setText(symbol.symbolData.baseValue.toString());
+      symbol.valueText.setText(this.formatValue(symbol.symbolData.baseValue.toString()));
     }
   }
 
@@ -1090,14 +1088,15 @@ export default class Game_Scene extends Phaser.Scene {
             }
 
             data.baseValue += valueChange;
-            if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
+            
+            if (symbol.valueText) symbol.valueText.setText(this.formatValue(data.baseValue.toString()));
           }
         }
 
         // █ BANANA █ //
         if (data.key === 'banana') {
           data.baseValue += 1;
-          if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
+          if (symbol.valueText) symbol.valueText.setText(this.formatValue(data.baseValue.toString()));
           if (Math.random() < 0.10) {
             if (Array.isArray(symbol.isProtected) && symbol.isProtected.length > 0) {
               for (const [_, protector, fn] of symbol.isProtected) {
@@ -1131,8 +1130,8 @@ export default class Game_Scene extends Phaser.Scene {
                 const target = Phaser.Utils.Array.GetRandom(nearby);
                 const tData = target.symbolData;
                 tData.baseValue = Math.floor(tData.baseValue * 2);
-                if (target.valueText) target.valueText.setText(tData.baseValue.toString());
-
+                if (target.valueText) target.valueText.setText(this.formatValue(tData.baseValue.toString()))
+            
                 // visual pulse
                 this.tweens.add({
                   targets: [target],
@@ -1190,7 +1189,7 @@ export default class Game_Scene extends Phaser.Scene {
 
           if (!hasFruitNearby) {
             data.baseValue += 5;
-            symbol.valueText.setText(data.baseValue.toString());
+            symbol.valueText.setText(this.formatValue(data.baseValue.toString()));
           }
         }
 
@@ -1227,12 +1226,12 @@ export default class Game_Scene extends Phaser.Scene {
           neighborsToDecrease.forEach(nSymbol => {
             const nData = nSymbol.symbolData;
             nData.baseValue = Math.max(1, nData.baseValue - 1);
-            if (nSymbol.valueText) nSymbol.valueText.setText(nData.baseValue.toString());
+            if (nSymbol.valueText) nSymbol.valueText.setText(this.formatValue(nData.baseValue.toString()));
           });
 
           if (gain > 0) {
             data.baseValue += gain;
-            if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
+            if (symbol.valueText) symbol.valueText.setText(this.formatValue(data.baseValue.toString()));
           }
         }
 
@@ -1289,7 +1288,7 @@ export default class Game_Scene extends Phaser.Scene {
 
             if (gain > 0) {
               data.baseValue += gain;
-              if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
+              if (symbol.valueText) symbol.valueText.setText(this.formatValue(data.baseValue.toString()));
             }
           }
         }
@@ -1302,7 +1301,7 @@ export default class Game_Scene extends Phaser.Scene {
 
           // +1 every turn
           data.baseValue += 1;
-          if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
+          if (symbol.valueText) symbol.valueText.setText(this.formatValue(data.baseValue.toString()));
 
           if (ny >= 0 && ny < this.slots.length && nx >= 0 && nx < this.slots[0].length) {
             const below = this.slots[ny][nx];
@@ -1354,7 +1353,7 @@ export default class Game_Scene extends Phaser.Scene {
               else if (bData.type === 'fruit') {
                 // absorb the fruit's value before destruction
                 data.baseValue += bData.baseValue;
-                if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
+                if (symbol.valueText) symbol.valueText.setText(this.formatValue(data.baseValue.toString()));
 
                 const symbolsToDestroy = this.checkDestructionType(bSym, bData);
                 for (const s of symbolsToDestroy) {
@@ -1394,7 +1393,7 @@ export default class Game_Scene extends Phaser.Scene {
           // Add the value bonus
           if (grapeCount > 0) {
             data.baseValue += grapeCount;
-            if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
+            if (symbol.valueText) symbol.valueText.setText(this.formatValue(data.baseValue.toString()));
           }
         }
 
@@ -1418,7 +1417,7 @@ export default class Game_Scene extends Phaser.Scene {
             }
 
             data.baseValue += gain;
-            if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
+            if (symbol.valueText) symbol.valueText.setText(this.formatValue(data.baseValue.toString()));
           }
         }
 
@@ -1450,7 +1449,7 @@ export default class Game_Scene extends Phaser.Scene {
             reset = true
           }
 
-          if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
+          if (symbol.valueText) symbol.valueText.setText(this.formatValue(data.baseValue.toString()));
 
           // visual flicker for reset
           if (reset) {
@@ -1488,8 +1487,8 @@ export default class Game_Scene extends Phaser.Scene {
             tData.baseValue = temp;
 
             // update text
-            if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
-            if (target.valueText) target.valueText.setText(tData.baseValue.toString());
+            if (symbol.valueText) symbol.valueText.setText(this.formatValue(data.baseValue.toString()));
+            if (target.valueText) target.valueText.setText(this.formatValue(tData.baseValue.toString()));
 
             // visual swap pulse
             this.tweens.add({
@@ -1501,11 +1500,37 @@ export default class Game_Scene extends Phaser.Scene {
           } else {
             // no symbols to swap
             data.baseValue += 1;
-            if (symbol.valueText) symbol.valueText.setText(data.baseValue.toString());
+            if (symbol.valueText) symbol.valueText.setText(this.formatValue(data.baseValue.toString()));
           }
         }
 
 
+// █ APPLE █ //
+if (data.key === 'apple') {
+    let maxValue = 0;
+
+    for (let r of this.slots) {
+        for (let s of r) {
+            if (s.used && s.symbol && s.symbol.symbolData.type === 'fruit' && s.symbol !== symbol) {
+                maxValue = Math.max(maxValue, s.symbol.symbolData.baseValue);
+            }
+        }
+    }
+
+    data.baseValue = maxValue;
+
+    if (symbol.valueText) {
+        symbol.valueText.setText(this.formatValue(data.baseValue.toString()));
+    }
+
+    // Optional visual pulse
+    this.tweens.add({
+        targets: [symbol],
+        scale: 1.2,
+        duration: 100,
+        yoyo: true
+    });
+}
 
 
 
